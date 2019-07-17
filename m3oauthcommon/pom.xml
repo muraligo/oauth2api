@@ -5,8 +5,9 @@
     <artifactId>oauth2service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>m3ouathdata</artifactId>
-  <description>Data provider interface for OAuth2 Service</description>
+  <artifactId>m3oauthcommon</artifactId>
+  <name>M3OAuth2Common</name>
+  <description>Common classes between Server and Data Provider</description>
   <properties>
   	<version.junit.platform>1.2.0</version.junit.platform>
   	<version.junit.jupiter>5.2.0</version.junit.jupiter>
@@ -28,11 +29,6 @@
     </plugins>
   </build>
   <dependencies>
-    <dependency>
-      <groupId>m3oauth</groupId>
-      <artifactId>m3oauthcommon</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.m3.common.oauth2.api.Service;
+import com.m3.oauth.common.Service;
 
 public class M3OAuthService implements Service {
     private static final long serialVersionUID = 1L;

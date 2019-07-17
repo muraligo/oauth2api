@@ -1,7 +1,7 @@
 package com.m3.ouath.service.data;
 
-import com.m3.common.oauth2.api.Client;
-import com.m3.common.oauth2.api.Service;
+import com.m3.oauth.common.Client;
+import com.m3.oauth.common.Service;
 
 public interface OAuth2DataProvider {
     Client getClientByIdOnly(String clientid);

@@ -7,5 +7,6 @@
   <modules>
   	<module>m3ouathdata</module>
   	<module>m3oauthserver</module>
+  	<module>m3oauthcommon</module>
   </modules>
 </project>

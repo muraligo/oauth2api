@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.m3.common.oauth2.api.Client;
+import com.m3.oauth.common.Client;
 
 public class M3OAuthClient implements Client {
     private static final long serialVersionUID = 1L;

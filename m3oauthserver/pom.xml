@@ -29,8 +29,13 @@
   </build>
   <dependencies>
     <dependency>
-      <groupId>m3common</groupId>
-      <artifactId>oauth2api</artifactId>
+      <groupId>m3oauth</groupId>
+      <artifactId>m3ouathdata</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>m3oauth</groupId>
+      <artifactId>m3oauthcommon</artifactId>
       <version>0.0.1-SNAPSHOT</version>
     </dependency>
     <dependency>
