@@ -3,19 +3,17 @@ package com.m3.ouath.service.handler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.m3.common.oauth2.api.OAuth2.CODE_CHALLENGE_METHOD_S256;
+import static com.m3.common.oauth2.api.OAuth2.MIN_CODE_VERIFIER_LENGTH;
+import static com.m3.common.oauth2.api.OAuth2.MAX_CODE_VERIFIER_LENGTH;
+
 import com.m3.oauth.common.AuthorizationService;
 import com.m3.oauth.common.Client;
 import com.m3.ouath.service.data.OAuth2DataProvider;
 
 public class OAuth2ApiHandler implements AuthorizationService {
     // see Proof Key for Code Exchange (PKCE) RFC 7636
-    private static final String CODE_CHALLENGE_METHOD_S256 = "S256";
-    private static final int MIN_CODE_VERIFIER_LENGTH = 43;
-    private static final int MAX_CODE_VERIFIER_LENGTH = 128;
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
-    private static final int DEFAULT_CODE_VERIFIER_ENTROPY = 64;
-    private static final int MIN_CODE_VERIFIER_ENTROPY = 32;
-    private static final int MAX_CODE_VERIFIER_ENTROPY = 96;
 
     private final OAuth2DataProvider _dataprovider;
 
