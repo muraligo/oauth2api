@@ -7,6 +7,7 @@ import static com.m3.common.oauth2.api.OAuth2.CODE_CHALLENGE_METHOD_S256;
 import static com.m3.common.oauth2.api.OAuth2.MIN_CODE_VERIFIER_LENGTH;
 import static com.m3.common.oauth2.api.OAuth2.MAX_CODE_VERIFIER_LENGTH;
 
+import com.m3.common.oauth2.api.OAuth2;
 import com.m3.oauth.common.AuthorizationService;
 import com.m3.oauth.common.Client;
 import com.m3.ouath.service.data.OAuth2DataProvider;
@@ -69,20 +70,66 @@ public class OAuth2ApiHandler implements AuthorizationService {
     }
 
     @Override
-    public TokenResponse handlePassword() {
+    public TokenResponse handlePassword(String clientid, String username, String pwmd5) {
 		// TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public TokenResponse handleClientCredential() {
+    public TokenResponse handleClientCredential(String clientid, String clientsecret) {
 		// TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public TokenResponse handleToken() {
-		// TODO Auto-generated method stub
+    public TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code) {
+        if (granttype == null) {
+            // TODO throw an exception. what to throw so the correct error code gets returned?
+            // something about missing or invalid grant type
+        }
+        Client cc = _dataprovider.getClientByIdOnly(clientid);
+        if (cc == null) {
+            // TODO throw an exception. what to throw so the correct error code gets returned?
+            // something about missing or invalid client id
+        }
+        switch (granttype) {
+        case AUTHORIZATION_CODE:
+            if (code == null) {
+                // TODO throw an exception. what to throw so the correct error code gets returned?
+                // something about missing or invalid authorization code
+            }
+            boolean insecureclient = false;
+            // TODO figure out some config in the client to determine how secure it is
+            // if client is not secure, it must use PKCE with SHA256
+            if (insecureclient) {
+                if (challenge == null || challenge.isBlank()) {
+                    // TODO throw an exception. what to throw so the correct error code gets returned?
+                    // something about missing or invalid code verifier
+                }
+            } else {
+                if (clientsecret == null || clientsecret.isBlank()) {
+                    // TODO throw an exception. what to throw so the correct error code gets returned?
+                    // something about missing or invalid client secret
+                }
+                // TODO ensure secret matches; else throw an exception. what to throw so the correct error code gets returned?
+                // something about missing or invalid client secret
+            }
+            break;
+        case CLIENT_CREDENTIALS:
+            if (clientsecret == null || clientsecret.isBlank()) {
+                // TODO throw an exception. what to throw so the correct error code gets returned?
+                // something about missing or invalid client secret
+            }
+            // TODO ensure secret matches; else throw an exception. what to throw so the correct error code gets returned?
+            // something about missing or invalid client secret
+            break;
+        case PASSWORD:
+            break;
+        default:
+            // TODO throw an exception. what to throw so the correct error code gets returned?
+            // something about missing or invalid grant type
+        }
+        // TODO Generate a token, store it and return
         return null;
     }
 

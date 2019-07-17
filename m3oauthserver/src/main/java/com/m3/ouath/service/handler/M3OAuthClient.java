@@ -89,8 +89,7 @@ public class M3OAuthClient implements Client {
 
     @Override
     public int compareTo(Client o) {
-		// TODO Auto-generated method stub
-        return 0;
+        return _id.compareTo(o.identifier());
     }
 
 }

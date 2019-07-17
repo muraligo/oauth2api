@@ -42,8 +42,7 @@ public class M3OAuthService implements Service {
 
     @Override
     public int compareTo(Service o) {
-		// TODO Auto-generated method stub
-        return 0;
+        return _name.compareTo(o.name());
     }
 
 }
