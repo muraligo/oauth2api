@@ -10,20 +10,50 @@ public interface AuthorizationService {
     // TODO for the above provide parameters
 
     public class AuthorizationResponse extends BaseResponse  {
+        private static final String CODE = "code";
 
-        protected AuthorizationResponse(SuccessResponseType typ) {
-            super(typ);
+        private String _code = null;
+        private String _state = null;
+
+        protected AuthorizationResponse() {
+            super(SuccessResponseType.REDIRECT);
         }
 
-    	// TODO implement
+        public void setCode(String value) { _code = value; }
+        public void setState(String value) { _state = value; }
+
+    	public String successAsUrlEncode(String url) {
+    	    // TODO Encode code and state and string them with & and append to url after ?
+    	    return null;
+    	}
     }
 
     public class TokenResponse extends BaseResponse {
+        private static final String TOKEN = "access_token";
+        private static final String EXPIRES = "expires_in";
 
-        protected TokenResponse(SuccessResponseType typ) {
-            super(typ);
+        private String _token = null;
+        private long _expires = -1L;
+
+        protected TokenResponse() {
+            super(SuccessResponseType.OK);
         }
 
-        // TODO Implement
+        public void setToken(String value) { _token = value; }
+        public void setExpires(long value) { _expires = value; }
+
+    	public String successAsJson() {
+            StringBuilder sb = new StringBuilder("{ ");
+            sb.append("\"");
+            sb.append(TOKEN);
+            sb.append("\": \"");
+            sb.append(_token);
+            sb.append("\", \"");
+            sb.append(EXPIRES);
+            sb.append("\": ");
+            sb.append(_expires);
+            sb.append(" }");
+            return sb.toString();
+    	}
     }
 }
