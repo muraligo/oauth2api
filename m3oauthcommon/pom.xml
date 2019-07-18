@@ -31,6 +31,11 @@
   <dependencies>
     <dependency>
       <groupId>m3common</groupId>
+      <artifactId>m3core</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>m3common</groupId>
       <artifactId>oauth2api</artifactId>
       <version>0.0.1-SNAPSHOT</version>
     </dependency>

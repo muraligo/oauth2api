@@ -1,5 +1,9 @@
 package com.m3.oauth.common;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.m3.common.core.HttpHelper;
 import com.m3.common.oauth2.api.OAuth2;
 
 public interface AuthorizationService {
@@ -7,7 +11,6 @@ public interface AuthorizationService {
     TokenResponse handlePassword(String clientid, String username, String pwmd5);
     TokenResponse handleClientCredential(String clientid, String clientsecret);
     TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code);
-    // TODO for the above provide parameters
 
     public class AuthorizationResponse extends BaseResponse  {
         private static final String CODE = "code";
@@ -23,8 +26,10 @@ public interface AuthorizationService {
         public void setState(String value) { _state = value; }
 
     	public String successAsUrlEncode(String url) {
-    	    // TODO Encode code and state and string them with & and append to url after ?
-    	    return null;
+    	    Map<String, String> params = new HashMap<String, String>();
+    	    params.put(CODE, _code);
+    	    params.put(OAuth2.STATE, _state);
+    	    return HttpHelper.buildUrlEncodedParameterUrl(url, params);
     	}
     }
 
