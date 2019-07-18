@@ -16,12 +16,14 @@ public class OAuth2ApiHandler implements AuthorizationService {
     // see Proof Key for Code Exchange (PKCE) RFC 7636
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
 
+    // Data Provider methods must be implemented in a thread safe manner
     private final OAuth2DataProvider _dataprovider;
 
     public OAuth2ApiHandler(OAuth2DataProvider dp) {
         _dataprovider = dp;
     }
 
+    // All methods must be implemented in a thread safe manner
     @Override
     public AuthorizationResponse handleAuthorizationCode(String clientid, String redirecturi, String state, String challenge, String algorithm, String[] scopes) {
         Client cc = _dataprovider.getClientByIdOnly(clientid);
@@ -69,18 +71,21 @@ public class OAuth2ApiHandler implements AuthorizationService {
         return null;
     }
 
+    // All methods must be implemented in a thread safe manner
     @Override
     public TokenResponse handlePassword(String clientid, String username, String pwmd5) {
 		// TODO Auto-generated method stub
         return null;
     }
 
+    // All methods must be implemented in a thread safe manner
     @Override
     public TokenResponse handleClientCredential(String clientid, String clientsecret) {
 		// TODO Auto-generated method stub
         return null;
     }
 
+    // All methods must be implemented in a thread safe manner
     @Override
     public TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code) {
         if (granttype == null) {
