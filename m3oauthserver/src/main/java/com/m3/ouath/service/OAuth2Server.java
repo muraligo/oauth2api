@@ -79,8 +79,7 @@ public class OAuth2Server {
         Runtime.getRuntime().addShutdownHook(new Thread() { 
             public void run() { 
                 _LOG.info(SERVICENAME + ": Shutdown Hook is running !");
-                // TODO Handle grace period
-                srvlst.get(0).stop(0);
+                srvlst.get(0).stop(svc._shutdownGracePeriod);
             }
         });
 
