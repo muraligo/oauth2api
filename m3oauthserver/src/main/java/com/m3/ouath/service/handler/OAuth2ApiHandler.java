@@ -28,35 +28,36 @@ public class OAuth2ApiHandler implements AuthorizationService {
     public AuthorizationResponse handleAuthorizationCode(String clientid, String redirecturi, String state, String challenge, String algorithm, String[] scopes) {
         Client cc = _dataprovider.getClientByIdOnly(clientid);
         if (cc == null) {
-            // TODO throw an exception. what to throw so the correct error code gets returned?
-            // something about missing or invalid client id
+            throw new IllegalArgumentException("missing or invalid client id");
         }
         boolean insecureclient = false;
         // TODO figure out some config in the client to determine how secure it is
         // if client is not secure, it must use PKCE with SHA256
         if (insecureclient) {
             if (challenge == null || challenge.isBlank()) {
-                // TODO throw an exception. what to throw so the correct error code gets returned?
-                // something about missing or invalid code challenge
+                throw new IllegalArgumentException("missing or invalid code challenge");
+            }
+            int cl = challenge.length();
+            if (cl < MIN_CODE_VERIFIER_LENGTH || cl > MAX_CODE_VERIFIER_LENGTH) {
+                throw new IllegalArgumentException("missing or invalid code challenge");
+            }
+            Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(challenge);
+            if (!m.matches()) {
+                throw new IllegalArgumentException("missing or invalid code challenge");
             }
             if (algorithm == null || algorithm.isBlank() || CODE_CHALLENGE_METHOD_S256.equalsIgnoreCase(algorithm)) {
                 // TODO throw an exception. what to throw so the correct error code gets returned?
                 // something about unacceptable challenge algorithm
-            }
-            int cl = challenge.length();
-            if (cl < MIN_CODE_VERIFIER_LENGTH || cl > MAX_CODE_VERIFIER_LENGTH) {
-                // TODO throw an exception. what to throw so the correct error code gets returned?
-                // something about missing or invalid code challenge
-            }
-            Matcher m = VALID_CODE_CHALLENGE_PATTERN.matcher(challenge);
-            if (!m.matches()) {
-                // TODO throw an exception. what to throw so the correct error code gets returned?
-                // something about missing or invalid code challenge
+                throw new IllegalStateException("unacceptable challenge algorithm");
             }
             // TODO save the code challenge and algorithm with the client associated with code
+            // Apparently you should not need to and you can verify easily if you do it right
+            // see here https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
         }
         String code = ""; // TODO implement Util.getUUID();
         // TODO if client says redirect uri has to match, confirm it does
+        // if not throw an IllegalStateException with something about unauthorized redirect_uri must match
+        // see OAuth2CodeHandler notes
         if (redirecturi == null || redirecturi.isBlank()) {
             redirecturi = cc.redirecturl();
         }
@@ -89,50 +90,54 @@ public class OAuth2ApiHandler implements AuthorizationService {
     @Override
     public TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code) {
         if (granttype == null) {
-            // TODO throw an exception. what to throw so the correct error code gets returned?
-            // something about missing or invalid grant type
+            throw new IllegalArgumentException("missing or invalid grant type");
         }
         Client cc = _dataprovider.getClientByIdOnly(clientid);
         if (cc == null) {
-            // TODO throw an exception. what to throw so the correct error code gets returned?
-            // something about missing or invalid client id
+            throw new IllegalArgumentException("missing or invalid client id");
         }
         switch (granttype) {
         case AUTHORIZATION_CODE:
             if (code == null) {
-                // TODO throw an exception. what to throw so the correct error code gets returned?
-                // something about missing or invalid authorization code
+                throw new IllegalArgumentException("missing or invalid authorization code");
             }
             boolean insecureclient = false;
             // TODO figure out some config in the client to determine how secure it is
             // if client is not secure, it must use PKCE with SHA256
             if (insecureclient) {
                 if (challenge == null || challenge.isBlank()) {
-                    // TODO throw an exception. what to throw so the correct error code gets returned?
-                    // something about missing or invalid code verifier
-                }
-            } else {
-                if (clientsecret == null || clientsecret.isBlank()) {
-                    // TODO throw an exception. what to throw so the correct error code gets returned?
-                    // something about missing or invalid client secret
+                    throw new IllegalArgumentException("missing or invalid code verifier");
                 }
                 // TODO ensure secret matches; else throw an exception. what to throw so the correct error code gets returned?
+                // this should result in an access_denied error
+                // something about missing or invalid challenge
+                // throw an IllegalStateException
+                // see OAuth2CodeHandler notes
+            } else {
+                if (clientsecret == null || clientsecret.isBlank()) {
+                    throw new IllegalArgumentException("missing or invalid client secret");
+                }
+                // TODO ensure secret matches; else throw an exception. what to throw so the correct error code gets returned?
+                // this should result in an access_denied error
                 // something about missing or invalid client secret
+                // throw an IllegalStateException
+                // see OAuth2CodeHandler notes
             }
             break;
         case CLIENT_CREDENTIALS:
             if (clientsecret == null || clientsecret.isBlank()) {
-                // TODO throw an exception. what to throw so the correct error code gets returned?
-                // something about missing or invalid client secret
+                throw new IllegalArgumentException("missing or invalid client secret");
             }
             // TODO ensure secret matches; else throw an exception. what to throw so the correct error code gets returned?
+            // this should result in an access_denied error
             // something about missing or invalid client secret
+            // throw an IllegalStateException
+            // see OAuth2CodeHandler notes
             break;
         case PASSWORD:
             break;
         default:
-            // TODO throw an exception. what to throw so the correct error code gets returned?
-            // something about missing or invalid grant type
+            throw new IllegalArgumentException("missing or invalid grant type");
         }
         // TODO Generate a token, store it and return
         return null;
