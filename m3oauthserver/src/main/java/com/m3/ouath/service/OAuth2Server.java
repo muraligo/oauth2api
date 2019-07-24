@@ -203,7 +203,9 @@ public static void main(String[] args) throws Exception {
     server.createContext("/", new BaseHandler());
     server.setExecutor(Executors.newCachedThreadPool());
     server.start();
-} 
+}
+See following for health check and logging filters 
+https://gist.github.com/tomwhoiscontrary/b4888b86057c74a636c455235c756354
       */
 
 }

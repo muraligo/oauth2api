@@ -10,6 +10,8 @@ public interface Client extends Serializable, Comparable<Client> {
     String name();
     String description();
     String redirecturl();
+    Confidentiality confidentiality();
+    UserAgent userAgent();
     Map<String, List<ClientScope>> allscopes();
     List<ClientScope> servicescopes(String aservice);
     List<ClientScope> matchingscopes(String aservice, String scopeprefix);
@@ -21,5 +23,19 @@ public interface Client extends Serializable, Comparable<Client> {
             service = aservice;
             scope = ascope;
         }
+    }
+
+    public enum Confidentiality {
+        PUBLIC,
+        CONFIDENTIAL,
+        TRUSTED
+    }
+
+    public enum UserAgent {
+        WEBSERVER,
+        MOBILE,
+        BROWSER,
+        SERVICE,
+        BATCH
     }
 }

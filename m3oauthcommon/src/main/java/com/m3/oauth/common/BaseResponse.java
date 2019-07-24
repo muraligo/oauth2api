@@ -11,10 +11,29 @@ public abstract class BaseResponse {
         _successresponse = typ;
     }
 
+    public int errorCode() {
+        return (hasErrors()) ? _errors.last().code() : 200;
+    }
     public void addError(M3OAuthError err) { _errors.add(err); }
     public boolean hasErrors() { return !_errors.isEmpty(); }
-    public String buildErrorResponse() {
-        return null;
+    public String buildErrorResponse(String msg) {
+    	StringBuilder sb = new StringBuilder();
+    	final int errsz = _errors.size();
+        if (hasErrors()) {
+            if (errsz > 1) {
+                sb.append("{ \"errors\": [ ");
+            }
+            _errors.forEach(err -> {
+            	sb.append(err.toPartialJson(msg));
+                if (errsz > 1) {
+                	sb.append(", ");
+                }
+            });
+            if (errsz > 1) {
+                sb.append("] }");
+            }
+        }
+        return (sb == null || sb.length() == 0) ? null : sb.toString();
     }
 
     public enum SuccessResponseType {
@@ -66,7 +85,7 @@ public abstract class BaseResponse {
         public int code() { return _code; }
         public String message() { return _message; }
 
-        public String toPartialJson() {
+        public String toPartialJson(String msg) {
             StringBuilder sb = new StringBuilder("{ ");
             sb.append("\"");
             sb.append(M3ErrorFields.NAME.errorFieldName());
@@ -76,6 +95,8 @@ public abstract class BaseResponse {
             sb.append(M3ErrorFields.DESCRIPTION.errorFieldName());
             sb.append("\": \"");
             sb.append(message());
+            sb.append(" ");
+            sb.append(msg);
             sb.append("\"");
             return sb.toString();
         }

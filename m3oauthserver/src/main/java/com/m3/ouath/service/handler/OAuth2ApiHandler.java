@@ -30,8 +30,7 @@ public class OAuth2ApiHandler implements AuthorizationService {
         if (cc == null) {
             throw new IllegalArgumentException("missing or invalid client id");
         }
-        boolean insecureclient = false;
-        // TODO figure out some config in the client to determine how secure it is
+        boolean insecureclient = !isClientSecure(cc);
         // if client is not secure, it must use PKCE with SHA256
         if (insecureclient) {
             if (challenge == null || challenge.isBlank()) {
@@ -101,8 +100,7 @@ public class OAuth2ApiHandler implements AuthorizationService {
             if (code == null) {
                 throw new IllegalArgumentException("missing or invalid authorization code");
             }
-            boolean insecureclient = false;
-            // TODO figure out some config in the client to determine how secure it is
+            boolean insecureclient = !isClientSecure(cc);
             // if client is not secure, it must use PKCE with SHA256
             if (insecureclient) {
                 if (challenge == null || challenge.isBlank()) {
@@ -141,6 +139,45 @@ public class OAuth2ApiHandler implements AuthorizationService {
         }
         // TODO Generate a token, store it and return
         return null;
+    }
+
+    private boolean isClientSecure(Client client) {
+        Client.Confidentiality c = client.confidentiality();
+        Client.UserAgent a = client.userAgent();
+        boolean secure = false;
+        switch (c) {
+        case TRUSTED:
+        case CONFIDENTIAL:
+            secure = true;
+            break;
+        case PUBLIC:
+        default:
+            secure = false;
+            break;
+        }
+        if (!secure) return false;
+        // so it may be secure; let us confirm with user agent
+        switch (a) {
+        case WEBSERVER:
+        	secure = (c == Client.Confidentiality.TRUSTED);
+            break;
+        case MOBILE:
+            secure = false;
+            break;
+        case BROWSER:
+            secure = false;
+        	break;
+        case SERVICE:
+            secure = true;
+            break;
+        case BATCH:
+        	secure = (c == Client.Confidentiality.TRUSTED);
+        	break;
+        default:
+            secure = false;
+            break;
+        }
+        return secure;
     }
 
 }

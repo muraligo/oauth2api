@@ -12,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.m3.common.core.HttpHelper;
-import com.m3.common.core.HttpResponseCode;
 import com.m3.common.oauth2.api.OAuth2;
 import com.m3.oauth.common.AuthorizationService.AuthorizationResponse;
+import com.m3.oauth.common.BaseResponse.M3OAuthError;
 import com.m3.ouath.service.data.OAuth2DataProvider;
 import com.m3.ouath.service.handler.OAuth2ApiHandler;
 import com.sun.net.httpserver.Headers;
@@ -31,7 +31,7 @@ public class OAuth2CodeHandler implements HttpHandler {
         _apihandler = new OAuth2ApiHandler(dp);
         if (rootpath.endsWith("/")) {
             int slashix = rootpath.lastIndexOf('/');
-            rootpath = (slashix == 0) ? "" : rootpath.substring(0, slashix);
+            rootpath = (slashix <= 0) ? "" : rootpath.substring(0, slashix);
         }
         _basepath = rootpath + "/auth";
     }
@@ -48,6 +48,7 @@ public class OAuth2CodeHandler implements HttpHandler {
             path = requestURI.getPath();
             path = (path != null && !path.isBlank()) ? path.toLowerCase() : "";
         }
+        AuthorizationResponse authresponse = null;
         // TODO replace all formErrorResponse instances with the appropriate OAuth2 standard error response
         // see https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
         // it should be in a JSON or XML body based on the Accept-Type
@@ -62,14 +63,16 @@ public class OAuth2CodeHandler implements HttpHandler {
         // if IllegalStateException, if it starts with "unauthorized", response is 
         // 403 with error exactly "access_denied" and message as "user or server denied access"
         if (path == null || path.isBlank()) {
-            HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                    "A non-blank base path is a must for every resource", _LOG);
+            authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+            sendErrorResponse(exchange, authresponse, null);
+            _LOG.error("A non-blank base path is a must for every resource");
             return;
         }
         int pthix = path.indexOf(_basepath);
         if (pthix < 0) {
-            HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                    "This resource class only handles requests with its base path", _LOG);
+            authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+            sendErrorResponse(exchange, authresponse, null);
+            _LOG.error("This resource class only handles requests with its base path");
             return;
         }
         pthix += _basepath.length();
@@ -77,8 +80,9 @@ public class OAuth2CodeHandler implements HttpHandler {
         if ("GET".equalsIgnoreCase(mthd)) {
             // do not care about Content-Type header
             if (path.charAt(pthix) != '?') {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "A GET request must have URL encoded parameters in the path", _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("A GET request must have URL encoded parameters in the path");
                 return;
             }
             String qrystr = null;
@@ -86,24 +90,26 @@ public class OAuth2CodeHandler implements HttpHandler {
                 qrystr = path.substring(pthix+1);
             }
             if (qrystr == null || qrystr.isBlank()) {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "A GET request must have URL encoded parameters in the path", _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("A GET request must have URL encoded parameters in the path");
                 return;
             }
             try {
                 formParams = HttpHelper.parseUrlQuery(qrystr);
             } catch (UnsupportedEncodingException e) {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "A GET request must have URL encoded parameters in the path", _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("A GET request must have URL encoded parameters in the path");
                 return;
             }
         } else if ("POST".equalsIgnoreCase(mthd)) {
             List<String> contentTypeLst = null;
             String contentType = null;
             if (hdrs.isEmpty() || !hdrs.containsKey(HttpHelper.HEADER_CONTENT_TYPE)) {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "This kind of request must contain a Content-Type Header with at least a Content-Type", 
-                        _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("This kind of request must contain a Content-Type Header with at least a Content-Type");
                 return;
             } else {
                 contentTypeLst = hdrs.get(HttpHelper.HEADER_CONTENT_TYPE);
@@ -113,9 +119,9 @@ public class OAuth2CodeHandler implements HttpHandler {
             }
             if (contentTypeLst == null || contentTypeLst.isEmpty() || contentType == null || 
                     !HttpHelper.CONTENT_TYPE_FORM_URL_ENCODED.equalsIgnoreCase(contentType)) {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "Methods with FORM parameters must have Content-Type Header of type URL encoded", 
-                        _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("Methods with FORM parameters must have Content-Type Header of type URL encoded");
                 return;
             }
             try (InputStream is = exchange.getRequestBody()) {
@@ -128,21 +134,25 @@ public class OAuth2CodeHandler implements HttpHandler {
             	formParams = HttpHelper.parseUrlQuery(reqdata);
             	// remaining body should not be of consequence
             } catch (IOException ioe1) {
-                HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                        "Error extracting parameters from form body", _LOG);
+                authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+                sendErrorResponse(exchange, authresponse, null);
+                _LOG.error("Error extracting parameters from form body");
                 return;
             }
         } else {
-            HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                    "This resource class only handles a GET or POST request", _LOG);
+            authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+            sendErrorResponse(exchange, authresponse, null);
+            _LOG.error("This resource class only handles a GET or POST request");
             return;
         }
         // validate all required parameters
         String responseType = formParams.get(OAuth2.RESPONSE_TYPE);
         responseType = (responseType != null && responseType.isBlank()) ? null : responseType.strip(); 
         if (responseType == null || !"code".equalsIgnoreCase(responseType)) {
-            HttpHelper.formErrorResponse(exchange, HttpResponseCode.BAD_REQUEST, 
-                    "Invalid response type", _LOG);
+            authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
+            sendErrorResponse(exchange, authresponse, 
+                    "Invalid response type");
+            // TODO validate to make sure it is the correct error we are returning
             return;
         }
         String clientid = formParams.get(OAuth2.CLIENT_ID);
@@ -158,11 +168,21 @@ public class OAuth2CodeHandler implements HttpHandler {
         String algorithm = formParams.get("code_challenge_method");
         algorithm = (algorithm != null && algorithm.isBlank()) ? null : algorithm.strip();
         String[] scopes = scope.split(" ");
-        AuthorizationResponse authresponse = null;
         try {
         	authresponse = _apihandler.handleAuthorizationCode(clientid, redirecturi, state, challenge, algorithm, scopes);
         } catch (Throwable t) {
-            // TODO Handle the error accordingly
+            authresponse = AuthorizationResponse.errorResponse();
+            if (t instanceof IllegalArgumentException) {
+                authresponse.addError(M3OAuthError.INVALID_REQUEST);
+            } else if (t instanceof IllegalStateException) {
+                if (t.getMessage().startsWith("unacceptable")) {
+                    authresponse.addError(M3OAuthError.UNSUPPORTED_RESPONSE_TYPE);
+                } else if (t.getMessage().startsWith("unauthorized")) {
+                    authresponse.addError(M3OAuthError.ACCESS_DENIED);
+                } else {
+                    authresponse.addError(M3OAuthError.INVALID_REQUEST);
+                }
+            }
         }
         // Send the authorization response
         int responsecode = 500;
@@ -196,6 +216,25 @@ public class OAuth2CodeHandler implements HttpHandler {
     	    return;
     	}
     	// should implicitly close request Input Stream if it was opened
+    }
+
+    // TODO pass in state and scope (even if not determined by then and are null)
+    public void sendErrorResponse(HttpExchange exchange, AuthorizationResponse errors, String message) {
+        String finalmsg = errors.buildErrorResponse(message); // TODO pass in state and scope
+        int msglen = (finalmsg != null) ? finalmsg.length() : -1;
+        try {
+            exchange.sendResponseHeaders(errors.errorCode(), msglen);
+        } catch (IOException ioe1) {
+            _LOG.error(finalmsg);
+            return;
+        }
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(finalmsg.getBytes());
+        } catch (IOException ioe2) {
+            _LOG.error(finalmsg);
+            return;
+        }
+        // should implicitly close request Input Stream if it was opened
     }
 
 }

@@ -25,12 +25,22 @@ public interface AuthorizationService {
         public void setCode(String value) { _code = value; }
         public void setState(String value) { _state = value; }
 
-    	public String successAsUrlEncode(String url) {
-    	    Map<String, String> params = new HashMap<String, String>();
-    	    params.put(CODE, _code);
-    	    params.put(OAuth2.STATE, _state);
-    	    return HttpHelper.buildUrlEncodedParameterUrl(url, params);
-    	}
+        public String successAsUrlEncode(String url) {
+            Map<String, String> params = new HashMap<String, String>();
+            params.put(CODE, _code);
+            params.put(OAuth2.STATE, _state);
+            return HttpHelper.buildUrlEncodedParameterUrl(url, params);
+        }
+
+        public static final AuthorizationResponse errorResponse() {
+            return new AuthorizationResponse();
+        }
+
+        public static final AuthorizationResponse errorResponse(M3OAuthError err) {
+            AuthorizationResponse resp = new AuthorizationResponse();
+            resp.addError(err);
+            return resp;
+        }
     }
 
     public class TokenResponse extends BaseResponse {
@@ -40,7 +50,7 @@ public interface AuthorizationService {
         private String _token = null;
         private long _expires = -1L;
 
-        protected TokenResponse() {
+        public TokenResponse() {
             super(SuccessResponseType.OK);
         }
 
@@ -60,5 +70,15 @@ public interface AuthorizationService {
             sb.append(" }");
             return sb.toString();
     	}
+
+        public static final TokenResponse errorResponse() {
+            return new TokenResponse();
+        }
+
+        public static final TokenResponse errorResponse(M3OAuthError err) {
+            TokenResponse resp = new TokenResponse();
+            resp.addError(err);
+            return resp;
+        }
     }
 }

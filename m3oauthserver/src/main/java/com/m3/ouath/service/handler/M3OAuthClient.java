@@ -18,10 +18,29 @@ public class M3OAuthClient implements Client {
     private final String _secret;
     private final String _name;
     private final String _redirect_url;
+    private final Confidentiality _confidentiality;
+    private final UserAgent _uagent;
     private String _description;
+    private String _uagentdetail;
     private final ConcurrentMap<String, List<ClientScope>> _scopes = new ConcurrentHashMap<String, List<ClientScope>>();
 
-    public M3OAuthClient(String thename, String theid, String thesecret, String redirect_url) {
+    public M3OAuthClient(String thename, String theid, String thesecret, String redirect_url, String client_conf, String user_agent) {
+        if (client_conf == null || client_conf.length() < 6) {
+            throw new IllegalArgumentException("Invalid client confidentiality " + client_conf);
+        }
+        try {
+            _confidentiality = Confidentiality.valueOf(client_conf);
+        } catch (Throwable t) {
+            throw new IllegalArgumentException("Invalid client confidentiality " + client_conf, t);
+        }
+        if (user_agent == null || user_agent.length() < 5) {
+            throw new IllegalArgumentException("Invalid user agent " + user_agent);
+        }
+        try {
+            _uagent = UserAgent.valueOf(user_agent);
+        } catch (Throwable t) {
+            throw new IllegalArgumentException("Invalid user agent " + user_agent, t);
+        }
         _id = theid;
         _name = thename;
         _secret = thesecret;
@@ -43,6 +62,15 @@ public class M3OAuthClient implements Client {
 
     @Override
     public String redirecturl() { return _redirect_url; }
+
+    @Override
+    public Confidentiality confidentiality() { return _confidentiality; }
+
+    @Override
+    public UserAgent userAgent() { return _uagent; }
+
+    public String userAgentDetail() { return _uagentdetail; }
+    public void userAgentDetail(String value) { _uagentdetail = value; }
 
     @Override
     public Map<String, List<ClientScope>> allscopes() {
