@@ -21,7 +21,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-public class OAuth2CodeHandler implements HttpHandler {
+class OAuth2CodeHandler implements HttpHandler {
     private static final Logger _LOG = LoggerFactory.getLogger(OAuth2CodeHandler.class.getSimpleName());
 
     private final OAuth2ApiHandler _apihandler;
@@ -49,19 +49,6 @@ public class OAuth2CodeHandler implements HttpHandler {
             path = (path != null && !path.isBlank()) ? path.toLowerCase() : "";
         }
         AuthorizationResponse authresponse = null;
-        // TODO replace all formErrorResponse instances with the appropriate OAuth2 standard error response
-        // see https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
-        // it should be in a JSON or XML body based on the Accept-Type
-        // this should be an error response code corresponding to the following
-        // if IllegalArgumentException, message should start with "missing or invalid "
-        // restate the message as "missing or invalid request parameters" and put in the 
-        // error_description. In the error field use exactly "invalid_request". 
-        // Response is BAD_REQUEST
-        // if IllegalStateException, if it starts with "unacceptable", response 
-        // should be a 302 with error exactly "unsupported_response_type" and description 
-        // of the message in entirity
-        // if IllegalStateException, if it starts with "unauthorized", response is 
-        // 403 with error exactly "access_denied" and message as "user or server denied access"
         if (path == null || path.isBlank()) {
             authresponse = AuthorizationResponse.errorResponse(M3OAuthError.INVALID_REQUEST);
             sendErrorResponse(exchange, authresponse, null);
@@ -172,6 +159,19 @@ public class OAuth2CodeHandler implements HttpHandler {
         	authresponse = _apihandler.handleAuthorizationCode(clientid, redirecturi, state, challenge, algorithm, scopes);
         } catch (Throwable t) {
             authresponse = AuthorizationResponse.errorResponse();
+            // TODO replace all formErrorResponse instances with the appropriate OAuth2 standard error response
+            // see https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
+            // it should be in a JSON or XML body based on the Accept-Type
+            // this should be an error response code corresponding to the following
+            // if IllegalArgumentException, message should start with "missing or invalid "
+            // restate the message as "missing or invalid request parameters" and put in the 
+            // error_description. In the error field use exactly "invalid_request". 
+            // Response is BAD_REQUEST
+            // if IllegalStateException, if it starts with "unacceptable", response 
+            // should be a 302 with error exactly "unsupported_response_type" and description 
+            // of the message in entirity
+            // if IllegalStateException, if it starts with "unauthorized", response is 
+            // 403 with error exactly "access_denied" and message as "user or server denied access"
             if (t instanceof IllegalArgumentException) {
                 authresponse.addError(M3OAuthError.INVALID_REQUEST);
             } else if (t instanceof IllegalStateException) {

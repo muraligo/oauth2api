@@ -1,5 +1,7 @@
 package com.m3.oauth.common;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public abstract class BaseResponse {
@@ -49,8 +51,8 @@ public abstract class BaseResponse {
         UNKNOWN(500, "Unknown error calling OAuth"),
         UNSUPPORTED_OVER_HTTP(400, "OAuth 2.0 only supports calls over HTTPS"),
         VERSION_REJECTED(400, "Supplied version of OAuth is not supported"),
-        PARAMETER_ABSENT(400, "A required parameter is missing from the request"),
-        PARAMETER_REJECTED(400, "A supplied parameter is too long"),
+        PARAMETER_ABSENT(400, "Missing request parameter required for this request"),
+        PARAMETER_REJECTED(400, "Invalid request parameter, could be too long"),
         // The request is missing a required parameter, or is otherwise malformed.
         // Includes an unsupported parameter value. (subsumes INVALID_PARAM error)
         INVALID_REQUEST(400, "Invalid OAuth 2.0 Request"),
@@ -123,5 +125,26 @@ public abstract class BaseResponse {
             _name = value;
         }
         public String errorFieldName() { return _name; }
+    }
+
+    public static Set<String> extractScopes(String strscope) {
+        return extractScopes(strscope, " ");
+    }
+
+    public static Set<String> extractScopes(String strscope, String delim) {
+        Set<String> scopes = null;
+        if (strscope != null && !strscope.isBlank()) {
+            String[] scpvals = strscope.strip().split(delim);
+            if (scpvals != null && scpvals.length > 0) {
+                for (int ix = 0; ix < scpvals.length; ix++) {
+                    if (scpvals[ix] != null && !scpvals[ix].isBlank())
+                        if (scopes == null) {
+                            scopes = new HashSet<String>();
+                        }
+                        scopes.add(scpvals[ix].strip());
+                }
+            }
+        }
+        return scopes;
     }
 }

@@ -1,5 +1,6 @@
 package com.m3.ouath.service.handler;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +25,19 @@ public class OAuth2ApiHandler implements AuthorizationService {
     }
 
     // All methods must be implemented in a thread safe manner
+    // TODO replace all formErrorResponse instances with the appropriate OAuth2 standard error response
+    // see https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
+    // it should be in a JSON or XML body based on the Accept-Type
+    // this should be an error response code corresponding to the following
+    // if IllegalArgumentException, message should start with "missing or invalid "
+    // restate the message as "missing or invalid request parameters" and put in the 
+    // error_description. In the error field use exactly "invalid_request". 
+    // Response is BAD_REQUEST
+    // if IllegalStateException, if it starts with "unacceptable", response 
+    // should be a 302 with error exactly "unsupported_response_type" and description 
+    // of the message in entirity
+    // if IllegalStateException, if it starts with "unauthorized", response is 
+    // 403 with error exactly "access_denied" and message as "user or server denied access"
     @Override
     public AuthorizationResponse handleAuthorizationCode(String clientid, String redirecturi, String state, String challenge, String algorithm, String[] scopes) {
         Client cc = _dataprovider.getClientByIdOnly(clientid);
@@ -85,6 +99,13 @@ public class OAuth2ApiHandler implements AuthorizationService {
         return null;
     }
 
+    // All methods must be implemented in a thread safe manner
+    public TokenResponse handleClientCredentials(String clientid, String clientsecret, String realm, String redirecturi, String audience, Set<String> scopes) {
+        return null; // TODO Implement
+    }
+
+    // TODO Instead of generic method to handle token, have methods for each grant type
+    // as parameters could be different
     // All methods must be implemented in a thread safe manner
     @Override
     public TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code) {

@@ -10,4 +10,6 @@ public interface M3Jwt {
         byte[] basebytes = bytesWithoutSignature();
         return verifier.verify(basebytes, signature());
     }
+
+    String AUDIENCE = "aud";
 }
