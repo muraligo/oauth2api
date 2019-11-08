@@ -12,7 +12,10 @@ public abstract class BaseResponse {
     }
 
     public int errorCode() {
-        return (hasErrors()) ? _errors.last().code() : 200;
+        return hasErrors() ? _errors.last().code() : 200;
+    }
+    public String lastError(String msg) {
+        return hasErrors() ? _errors.last().toPartialJson(msg) : null;
     }
     public void addError(M3OAuthError err) { _errors.add(err); }
     public boolean hasErrors() { return !_errors.isEmpty(); }
