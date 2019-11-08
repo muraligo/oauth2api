@@ -16,7 +16,7 @@ public abstract class BaseResponse {
     }
     public void addError(M3OAuthError err) { _errors.add(err); }
     public boolean hasErrors() { return !_errors.isEmpty(); }
-    public String buildErrorResponse(String msg) {
+    public String errorsToString(String msg) {
     	StringBuilder sb = new StringBuilder();
     	final int errsz = _errors.size();
         if (hasErrors()) {
@@ -43,13 +43,14 @@ public abstract class BaseResponse {
 
     public enum M3OAuthError {
         // TODO get the correct error code here
-        UNKNOWN(500, "Unknown error calling OAuth"), 
-        // The request is missing a required parameter, includes an unsupported parameter value, or is otherwise malformed.
+        UNKNOWN(500, "Unknown error calling OAuth"),
+        UNSUPPORTED_OVER_HTTP(400, "OAuth 2.0 only supports calls over HTTPS"),
+        VERSION_REJECTED(400, "Supplied version of OAuth is not supported"),
+        PARAMETER_ABSENT(400, "A required parameter is missing from the request"),
+        PARAMETER_REJECTED(400, "A supplied parameter is too long"),
+        // The request is missing a required parameter, or is otherwise malformed.
+        // Includes an unsupported parameter value. (subsumes INVALID_PARAM error)
         INVALID_REQUEST(400, "Invalid OAuth 2.0 Request"),
-        // The client is not authorized to make this OAuth 2.0 request using this method.
-        UNAUTHORIZED_CLIENT(401, "Client is not authorized"),
-        // The resource owner or authorization server denied the request.
-        ACCESS_DENIED(403, "Client is denied requested access"),
         // The authorization server does not support this OAuth 2.0 request using this method.
         UNSUPPORTED_RESPONSE_TYPE(400, "Clients requested response type is not supported for this request"), 
         INVALID_SCOPE(400, "The requested scope is invalid, unknown, or malformed."), 
@@ -66,12 +67,18 @@ public abstract class BaseResponse {
         // respond with an HTTP 401 (Unauthorized) status code, and
         // include the "WWW-Authenticate" response header field
         // matching the authentication scheme used by the client.
-        INVALID_CLIENT(401, "Client authentication failed (e.g. unknown client, no client authentication included, or unsupported authentication method)"), 
-        INVALID_GRANT(401, "The grant is expired, revoked, or otherwise invalid"), 
-        UNSUPPORTED_GRANT_TYPE(401, "The authorization grant type is not supported by the authorization server."), 
-        EXPIRED_TOKEN(401, "The provided token has expired, please request another"), 
+        INVALID_CLIENT(401, "Client authentication failed (e.g. unknown client, or unsupported authentication method)."),
+        UNAUTHORIZED_ACCESS(401, "Client has not provided the necessary credentials to perform the necessary action."),
+        UNSUPPORTED_GRANT_TYPE(401, "The authorization grant type is not supported by the authorization server."),
+        // Authorization code, resource owner credentials or refresh token has the described error
+        // Or the redirect URI does not match
+        INVALID_GRANT(401, "The grant is expired, revoked, or otherwise invalid."), 
         INVALID_TOKEN(401, "The provided token is revoked, malformed, or othewise invalid."), 
-        INSUFFICIENT_SCOPE(401, "The request requires higher privileges than provided by the token.")
+        TOKEN_EXPIRED(401, "The provided token has expired, please request another."), 
+        INSUFFICIENT_SCOPE(403, "The request requires higher privileges than provided by the token."),
+        // Client does not have the permission necessary to perform the action.
+        // The resource owner denied the request for authorization.
+        ACCESS_DENIED(403, "Client is denied requested access.")
         ;
 
     	private final int _code;
@@ -84,6 +91,7 @@ public abstract class BaseResponse {
 
         public int code() { return _code; }
         public String message() { return _message; }
+        public String errorValue() { return name().toLowerCase(); }
 
         public String toPartialJson(String msg) {
             StringBuilder sb = new StringBuilder("{ ");
