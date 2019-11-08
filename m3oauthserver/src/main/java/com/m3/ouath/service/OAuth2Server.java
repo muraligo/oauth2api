@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.m3.common.core.HttpHelper;
-import com.m3.ouath.service.data.OAuth2DataProvider;
+import com.m3.oauth.service.data.OAuth2DataProvider;
 import com.sun.net.httpserver.HttpServer;
 
 public class OAuth2Server {
@@ -20,6 +20,8 @@ public class OAuth2Server {
     private static final String DEFAULTENV = "dev";
     private static final String SERVICENAME = "OAuth2API";
 
+    static OAuth2DataProvider _dataprovider = null; // pkg private for testing
+    static String _sshkeyfile = null; // pkg private for testing
     private static String _envname = null;
 
     private int _minThreads;
@@ -101,6 +103,8 @@ public class OAuth2Server {
             System.exit(1);
         }
         readEnvironmentSpecificConfigs(configraw);
+        readFrameworkConfigs(configraw);
+        readApplicationConfigs(configraw);
     }
 
     @SuppressWarnings("unchecked")
@@ -149,7 +153,24 @@ public class OAuth2Server {
 //            if (serverdetails.containsKey("requestLog")) {
 //                _requestLog = readLogConfig((Map<String, Object>)configraw.get("requestLog"));
 //            }
-        } else if (configraw.containsKey("monitoring")) {
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void readApplicationConfigs(Map<String, Object> configraw) {
+        if (!configraw.containsKey(_SECKEY)) return;
+        Map<String, Object> configsec = (Map<String, Object>) configraw.get(_SECKEY);
+        if (!configsec.containsKey(_IDPKEY)) return;
+        Map<String, Object> configidp = (Map<String, Object>) configraw.get(_IDPKEY);
+        _sshkeyfile = (String) configidp.get(_K_PRIVKEYFILE);
+        if (configidp.containsKey(_K_DSROOT)) {
+            OAuth2DataProvider.initialize((Map<String, Object>) configraw.get(_K_DSROOT));
+        }
+        _sshkeyfile = (String) configidp.get(_K_PRIVKEYFILE);
+    }
+
+    private void readFrameworkConfigs(Map<String, Object> configraw) {
+        if (configraw.containsKey("monitoring")) {
             // TODO Implement monitoring later
 //            Map<String, Object> monitordetails = (Map<String, Object>)configraw.get("monitoring");
 //            _monitorfw = SkinnyFrameworks.addFrameworkFromConfig("MONITOR", monitordetails, _LOG);
@@ -165,6 +186,11 @@ public class OAuth2Server {
         }
         return argvalue;
     }
+
+    private static final String _SECKEY = "security";
+    private static final String _IDPKEY = "idp";
+    private static final String _K_PRIVKEYFILE = "privatekeyfile";
+    private static final String _K_DSROOT = "datasource";
 
     /*
      * This how REDIRECTs need to be returned

@@ -15,7 +15,7 @@ import com.m3.common.core.HttpHelper;
 import com.m3.common.oauth2.api.OAuth2;
 import com.m3.oauth.common.AuthorizationService.AuthorizationResponse;
 import com.m3.oauth.common.BaseResponse.M3OAuthError;
-import com.m3.ouath.service.data.OAuth2DataProvider;
+import com.m3.oauth.service.data.OAuth2DataProvider;
 import com.m3.ouath.service.handler.OAuth2ApiHandler;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -218,9 +218,9 @@ public class OAuth2CodeHandler implements HttpHandler {
     	// should implicitly close request Input Stream if it was opened
     }
 
-    // TODO pass in state and scope (even if not determined by then and are null)
+    // TODO pass in state (even if not determined by then and are null)
     public void sendErrorResponse(HttpExchange exchange, AuthorizationResponse errors, String message) {
-        String finalmsg = errors.buildErrorResponse(message); // TODO pass in state and scope
+        String finalmsg = errors.lastError(message); // TODO pass in state
         int msglen = (finalmsg != null) ? finalmsg.length() : -1;
         try {
             exchange.sendResponseHeaders(errors.errorCode(), msglen);
