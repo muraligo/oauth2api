@@ -1,4 +1,4 @@
-package com.m3.ouath.service.data;
+package com.m3.ouath.service.handler;
 
 import java.io.Serializable;
 
