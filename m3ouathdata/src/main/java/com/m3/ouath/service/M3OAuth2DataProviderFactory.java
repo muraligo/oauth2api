@@ -1,4 +1,4 @@
-package com.m3.ouath.service.data;
+package com.m3.ouath.service;
 
 import com.m3.oauth.service.data.OAuth2DataProvider;
 import com.m3.oauth.service.data.OAuth2DataProviderFactory;

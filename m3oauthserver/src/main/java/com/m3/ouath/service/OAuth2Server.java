@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.m3.common.core.HttpHelper;
 import com.m3.oauth.service.data.OAuth2DataProvider;
+import com.m3.oauth.service.data.OAuth2DataProviderFactory;
 import com.sun.net.httpserver.HttpServer;
 
 public class OAuth2Server {
@@ -20,6 +21,7 @@ public class OAuth2Server {
     private static final String DEFAULTENV = "dev";
     private static final String SERVICENAME = "OAuth2API";
 
+    private static OAuth2DataProviderFactory _dpfactory = null;
     static OAuth2DataProvider _dataprovider = null; // pkg private for testing
     static String _sshkeyfile = null; // pkg private for testing
     private static String _envname = null;
@@ -70,12 +72,9 @@ public class OAuth2Server {
         }
         final List<HttpServer> srvlst = Collections.singletonList(server); // for shutdown hook
 
-        // TODO Initialize a Data Provider
-        OAuth2DataProvider dp = null;
-
 //        HttpContext doesitworkContext = server.createContext("/check");
 //        doesitworkContext.setHandler(OAuth2Server::handleDoesItWork);
-        svc.registerResources(server, dp);
+        svc.registerResources(server, _dataprovider);
         server.setExecutor(Executors.newCachedThreadPool());
 
         Runtime.getRuntime().addShutdownHook(new Thread() { 
@@ -92,6 +91,7 @@ public class OAuth2Server {
     private void registerResources(HttpServer server, OAuth2DataProvider dp) {
         OAuth2CodeHandler codeh = new OAuth2CodeHandler(dp, _rootPath);
         server.createContext(codeh.basepath(), codeh);
+        // TODO Create an OAuth2ClientCredentialsHandler also and do the same here
         // TODO Create an OAuth2TokenHandler also and do the same here
     }
 
@@ -164,9 +164,9 @@ public class OAuth2Server {
         Map<String, Object> configidp = (Map<String, Object>) configraw.get(_IDPKEY);
         _sshkeyfile = (String) configidp.get(_K_PRIVKEYFILE);
         if (configidp.containsKey(_K_DSROOT)) {
-            OAuth2DataProvider.initialize((Map<String, Object>) configraw.get(_K_DSROOT));
+            _dpfactory = new M3OAuth2DataProviderFactory();
+            _dataprovider = OAuth2DataProvider.initialize((Map<String, Object>) configraw.get(_K_DSROOT), _dpfactory);
         }
-        _sshkeyfile = (String) configidp.get(_K_PRIVKEYFILE);
     }
 
     private void readFrameworkConfigs(Map<String, Object> configraw) {
