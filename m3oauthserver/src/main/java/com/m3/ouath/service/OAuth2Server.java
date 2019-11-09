@@ -91,8 +91,8 @@ public class OAuth2Server {
     private void registerResources(HttpServer server, OAuth2DataProvider dp) {
         OAuth2CodeHandler codeh = new OAuth2CodeHandler(dp, _rootPath);
         server.createContext(codeh.basepath(), codeh);
-        // TODO Create an OAuth2ClientCredentialsHandler also and do the same here
-        // TODO Create an OAuth2TokenHandler also and do the same here
+        OAuth2TokenHandler tokh = new OAuth2TokenHandler(dp, _rootPath, _sshkeyfile);
+        server.createContext(tokh.basepath(), tokh);
     }
 
 	private void readConfigs(String configPath) {

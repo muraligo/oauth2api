@@ -28,7 +28,7 @@ class OAuth2CodeHandler implements HttpHandler {
     private final String _basepath;
 
     public OAuth2CodeHandler(OAuth2DataProvider dp, String rootpath) {
-        _apihandler = new OAuth2ApiHandler(dp);
+        _apihandler = new OAuth2ApiHandler(dp, null); // FIXME pass sshkeyfile
         if (rootpath.endsWith("/")) {
             int slashix = rootpath.lastIndexOf('/');
             rootpath = (slashix <= 0) ? "" : rootpath.substring(0, slashix);

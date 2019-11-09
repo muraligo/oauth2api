@@ -2,6 +2,7 @@ package com.m3.oauth.common;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.m3.common.core.HttpHelper;
 import com.m3.common.oauth2.api.OAuth2;
@@ -9,7 +10,7 @@ import com.m3.common.oauth2.api.OAuth2;
 public interface AuthorizationService {
     AuthorizationResponse handleAuthorizationCode(String clientid, String redirecturi, String state, String challenge, String algorithm, String[] scopes);
     TokenResponse handlePassword(String clientid, String username, String pwmd5);
-    TokenResponse handleClientCredential(String clientid, String clientsecret);
+    TokenResponse handleClientCredential(String clientid, String clientsecret, String realm, String redirecturi, String audience, Set<String> scopes, String requestpath);
     TokenResponse handleToken(OAuth2.GrantType granttype, String clientid, String redirecturi, String clientsecret, String challenge, String code);
 
     public class AuthorizationResponse extends BaseResponse  {

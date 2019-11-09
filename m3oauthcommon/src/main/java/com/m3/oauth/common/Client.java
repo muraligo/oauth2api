@@ -3,6 +3,7 @@ package com.m3.oauth.common;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface Client extends Serializable, Comparable<Client> {
     String identifier();
@@ -14,7 +15,7 @@ public interface Client extends Serializable, Comparable<Client> {
     UserAgent userAgent();
     Map<String, List<ClientScope>> allscopes();
     List<ClientScope> servicescopes(String aservice);
-    List<ClientScope> matchingscopes(String aservice, String scopeprefix);
+    List<ClientScope> matchingscopes(String aservice, Set<String> requestscopes);
 
     public class ClientScope {
         public final String service;

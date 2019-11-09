@@ -1,5 +1,9 @@
 package com.m3.ouath.service.handler;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,17 +15,23 @@ import static com.m3.common.oauth2.api.OAuth2.MAX_CODE_VERIFIER_LENGTH;
 import com.m3.common.oauth2.api.OAuth2;
 import com.m3.oauth.common.AuthorizationService;
 import com.m3.oauth.common.Client;
+import com.m3.oauth.common.BaseResponse.M3OAuthError;
 import com.m3.oauth.service.data.OAuth2DataProvider;
 
 public class OAuth2ApiHandler implements AuthorizationService {
     // see Proof Key for Code Exchange (PKCE) RFC 7636
     private static final Pattern VALID_CODE_CHALLENGE_PATTERN = Pattern.compile("^[0-9a-zA-Z\\-\\.~_]+$");
+    // TODO should ideally take from config
+    private static final int EXPIRY_MINUTES = 15;
 
     // Data Provider methods must be implemented in a thread safe manner
     private final OAuth2DataProvider _dataprovider;
 
-    public OAuth2ApiHandler(OAuth2DataProvider dp) {
+    private final String _sshkeyfile;
+
+    public OAuth2ApiHandler(OAuth2DataProvider dp, String sshkeyfile) {
         _dataprovider = dp;
+        _sshkeyfile = sshkeyfile;
     }
 
     // All methods must be implemented in a thread safe manner
@@ -94,14 +104,47 @@ public class OAuth2ApiHandler implements AuthorizationService {
 
     // All methods must be implemented in a thread safe manner
     @Override
-    public TokenResponse handleClientCredential(String clientid, String clientsecret) {
-		// TODO Auto-generated method stub
-        return null;
+    public TokenResponse handleClientCredential(String clientid, String clientsecret, String realm, String redirecturi, String audience, Set<String> scopes, String requestpath) {
+        Client cc = _dataprovider.getClientByIdOnly(clientid);
+        if (cc == null) {
+            return TokenResponse.errorResponse(M3OAuthError.INVALID_CLIENT);
+        }
+        Set<String> responsescopes = null;
+        if (scopes != null && !scopes.isEmpty()) {
+            if (audience == null || audience.isBlank()) { // scope needs valid audience to be verified
+                return TokenResponse.errorResponse(M3OAuthError.PARAMETER_ABSENT);
+            }
+            List<Client.ClientScope> matchingscopes = cc.matchingscopes(audience, scopes);
+            if (matchingscopes != null && !matchingscopes.isEmpty()) {
+                responsescopes = new HashSet<String>();
+                for (Client.ClientScope mscp: matchingscopes) {
+                    responsescopes.add(mscp.scope);
+                }
+            }
+        }
+        if (responsescopes == null) {
+            return TokenResponse.errorResponse(M3OAuthError.INSUFFICIENT_SCOPE);
+        }
+        Long expiryseconds = Duration.ofMinutes(EXPIRY_MINUTES).get(ChronoUnit.SECONDS);
+        String jwttoken = null;
+        try {
+            jwttoken = M3OAuth2Jwt.encodeJwtToUrlUtf8(clientid, requestpath, audience, expiryseconds, _sshkeyfile);
+        } catch (Throwable t) {
+            return TokenResponse.errorResponse(M3OAuthError.SERVER_ERROR);
+        }
+        String tokid = _dataprovider.generateTokenId();
+        OAuth2AccessToken token = new OAuth2AccessToken(tokid, jwttoken, clientid, expiryseconds);
+        token.setScopes(assembleScopes(responsescopes));
+        _dataprovider.storeAccessToken(token);
+        TokenResponse response = new TokenResponse();
+        response.setToken(jwttoken);
+        response.setExpires(expiryseconds);
+        return response;
     }
 
-    // All methods must be implemented in a thread safe manner
-    public TokenResponse handleClientCredentials(String clientid, String clientsecret, String realm, String redirecturi, String audience, Set<String> scopes) {
-        return null; // TODO Implement
+    private String assembleScopes(Set<String> responsescopes) {
+		// TODO Auto-generated method stub
+        return null;
     }
 
     // TODO Instead of generic method to handle token, have methods for each grant type

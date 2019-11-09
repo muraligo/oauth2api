@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -89,15 +90,17 @@ public class M3OAuthClient implements Client {
     }
 
     @Override
-    public List<ClientScope> matchingscopes(String aservice, String scopeprefix) {
+    public List<ClientScope> matchingscopes(String aservice, Set<String> requestscopes) {
         List<ClientScope> retval = Collections.unmodifiableList(_scopes.get(aservice));
         for (ListIterator<ClientScope> it = retval.listIterator(); it.hasNext(); ) {
             ClientScope scp = it.next();
-            if (!scp.scope.startsWith(scopeprefix)) {
-                it.remove();
+            for (String reqscp : requestscopes) {
+                if (!scp.scope.startsWith(reqscp)) {
+                    it.remove();
+                }
             }
         }
-        return null;
+        return retval;
     }
 
     public ClientScope addScope(String aservice, String ascope) {

@@ -38,8 +38,8 @@ class OAuth2TokenHandler implements HttpHandler {
     private final OAuth2ApiHandler _apihandler;
     private final String _basepath;
 
-    OAuth2TokenHandler(OAuth2DataProvider dp, String rootpath) {
-        _apihandler = new OAuth2ApiHandler(dp);
+    OAuth2TokenHandler(OAuth2DataProvider dp, String rootpath, String sshkeyfile) {
+        _apihandler = new OAuth2ApiHandler(dp, sshkeyfile);
         if (rootpath.endsWith("/")) {
             int slashix = rootpath.lastIndexOf('/');
             rootpath = (slashix <= 0) ? "" : rootpath.substring(0, slashix);
@@ -192,23 +192,12 @@ class OAuth2TokenHandler implements HttpHandler {
                 }
                 Set<String> extscopes = TokenResponse.extractScopes(formParams.get(OAuth2.SCOPE));
                 try {
-                    tokenresponse = _apihandler.handleClientCredentials(formParams.get("principal"), 
-                            formParams.get("credential"), formParams.get("realm"), redirecturi, audience, extscopes);
+                    String calledpath = (path.charAt(pthix) == '?') ? path.substring(0, pthix) : path;
+                    tokenresponse = _apihandler.handleClientCredential(formParams.get("principal"), 
+                            formParams.get("credential"), formParams.get("realm"), redirecturi, 
+                            audience, extscopes, calledpath);
                 } catch (Throwable t) {
                 	tokenresponse = TokenResponse.errorResponse();
-                    // TODO replace all formErrorResponse instances with the appropriate OAuth2 standard error response
-                    // see https://www.oauth.com/oauth2-servers/authorization/the-authorization-response/
-                    // it should be in a JSON or XML body based on the Accept-Type
-                    // this should be an error response code corresponding to the following
-                    // if IllegalArgumentException, message should start with "missing or invalid "
-                    // restate the message as "missing or invalid request parameters" and put in the 
-                    // error_description. In the error field use exactly "invalid_request". 
-                    // Response is BAD_REQUEST
-                    // if IllegalStateException, if it starts with "unacceptable", response 
-                    // should be a 302 with error exactly "unsupported_response_type" and description 
-                    // of the message in entirity
-                    // if IllegalStateException, if it starts with "unauthorized", response is 
-                    // 403 with error exactly "access_denied" and message as "user or server denied access"
                     if (t instanceof IllegalArgumentException) {
                     	tokenresponse.addError(M3OAuthError.INVALID_REQUEST);
                     } else if (t instanceof IllegalStateException) {

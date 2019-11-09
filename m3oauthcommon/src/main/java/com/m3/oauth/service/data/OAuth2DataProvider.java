@@ -3,6 +3,7 @@ package com.m3.oauth.service.data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.m3.oauth.common.AccessToken;
 import com.m3.oauth.common.Client;
@@ -85,4 +86,21 @@ public interface OAuth2DataProvider {
         String service = null;
         String[] scopes = null;
     }
+
+    final AtomicLong SEQNUM = new AtomicLong(1L);
+
+	default String generateTokenId() {
+	    long timestamp = System.currentTimeMillis();
+	    // 63 is the length of a long
+	    // 41 is the length of digits from a timestamp in milliseconds
+	    // first move the timestamp to the upper bits of a long
+	    long tmp_id = timestamp << (63 - 41);
+	    long nodeid = 1L; // TODO this should ideally be passed in based on which node this instance is running on
+	    // next move the nodeid to occupy the next 10 bits
+	    tmp_id |= nodeid << (63 - 41 - 10);
+	    long seqnum = SEQNUM.getAndIncrement();
+	    // lowest bits are taken by sequence number
+	    tmp_id |= seqnum;
+	    return Long.toString(tmp_id);
+	}
 }

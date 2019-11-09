@@ -2,7 +2,9 @@ package com.m3.ouath.service.handler;
 
 import java.io.Serializable;
 
-public class OAuth2AccessToken implements Serializable { // no need for comparable
+import com.m3.oauth.common.AccessToken;
+
+public class OAuth2AccessToken implements AccessToken, Serializable { // no need for comparable
     private static final long serialVersionUID = 1L;
 
     private final String _tokenid;
@@ -21,4 +23,9 @@ public class OAuth2AccessToken implements Serializable { // no need for comparab
     public final String clientId() { return _clientid; }
     public final String tokenValue() { return _tokenvalue; }
     public final Long tokenExpiresAfterMs() { return _tokenexpiry; }
+
+    public void setScopes(String scopes) {
+		// TODO Auto-generated method stub
+		
+    }
 }

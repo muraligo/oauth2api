@@ -12,4 +12,7 @@ public interface M3Jwt {
     }
 
     String AUDIENCE = "aud";
+    String ISSUER = "iss";
+    String SUBJECT = "sub";
+    String EXPIRATION = "exp";
 }
