@@ -1,4 +1,4 @@
-package com.m3.ouath.service.handler;
+package com.m3.ouath.service.data;
 
 import java.util.ArrayList;
 import java.util.Collections;

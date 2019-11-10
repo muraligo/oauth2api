@@ -1,10 +1,13 @@
 package com.m3.ouath.service.handler;
 
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.Signature;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.m3.common.core.AbstractRsaKeyProvider;
 
 public class RsaSigner {
     private static final String DEFAULT_ALGORITHM = "SHA256withRSA";
@@ -18,13 +21,20 @@ public class RsaSigner {
         _JAVA_SIGN_ALGORITHMS.put("SHA512withRSA", "RS512");
     }
 
-    // FIXME Later change both below to final
-    private RSAPrivateKey _key;
-    private String _algorithm;
+    private final RSAPrivateKey _key;
+    private final String _algorithm;
 
-	// FIXME Change from class to interface for provider
-    public RsaSigner(SimpleRsaKeyProvider kp) {
-		// FIXME Auto-generated constructor stub
+    public RsaSigner(AbstractRsaKeyProvider kp) {
+        this(loadPrivateKey(kp));
+    }
+
+    public RsaSigner(RSAPrivateKey key) {
+        this(key, DEFAULT_ALGORITHM);
+    }
+
+    public RsaSigner(RSAPrivateKey key, String algorithm) {
+        _key = key;
+        _algorithm = algorithm;
     }
 
     public String algorithm() { return _algorithm; }
@@ -38,6 +48,14 @@ public class RsaSigner {
         } catch (GeneralSecurityException ex) {
             throw new RuntimeException(ex);
         }
+    }
+
+    private static RSAPrivateKey loadPrivateKey(AbstractRsaKeyProvider keyProvider) {
+        KeyPair kp = keyProvider.parseKeyPair(keyProvider.sshKey());
+        if (kp.getPrivate() == null) {
+            throw new IllegalArgumentException("Not a private key");
+        }
+        return (RSAPrivateKey) kp.getPrivate();
     }
 
     static String signatureAlgorithm(String javaname) {

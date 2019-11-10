@@ -17,6 +17,7 @@ import com.m3.oauth.common.AuthorizationService;
 import com.m3.oauth.common.Client;
 import com.m3.oauth.common.BaseResponse.M3OAuthError;
 import com.m3.oauth.service.data.OAuth2DataProvider;
+import com.m3.ouath.service.data.OAuth2AccessToken;
 
 public class OAuth2ApiHandler implements AuthorizationService {
     // see Proof Key for Code Exchange (PKCE) RFC 7636

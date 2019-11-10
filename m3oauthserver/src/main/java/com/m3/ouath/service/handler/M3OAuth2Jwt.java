@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.m3.common.core.SimpleRsaKeyProvider;
 import com.m3.oauth.common.M3Jwt;
 
 class M3OAuth2Jwt implements M3Jwt {

@@ -1,6 +1,7 @@
 package com.m3.oauth.service.data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -21,7 +22,16 @@ public interface OAuth2DataProvider {
     @SuppressWarnings("unchecked")
     static OAuth2DataProvider initialize(Map<String, Object> configds, OAuth2DataProviderFactory dpfactory) {
         if (configds.containsKey("type")) {
-            OAuth2DataProvider dp = dpfactory.create((String)configds.get("name"), (String)configds.get("type"));
+            String name = (String)configds.get("name");
+            String thetype = (String)configds.get("type");
+            Map<String, Object> dpprops = new HashMap<String, Object>();
+            for (Map.Entry<String, Object> dpconfprops : configds.entrySet()) {
+                if ("name".equals(dpconfprops.getKey())) continue;
+                if ("type".equals(dpconfprops.getKey())) continue;
+                if ("initdata".equals(dpconfprops.getKey())) continue;
+                dpprops.put(dpconfprops.getKey(), dpconfprops.getValue());
+            }
+            OAuth2DataProvider dp = dpfactory.create(name, thetype, dpprops);
             if (configds.containsKey("initdata")) {
                 List<Map<String, Object>> initdatacfg = (List<Map<String, Object>>)configds.get("initdata");
                 for (Map<String, Object> initvalcfg : initdatacfg) {
@@ -87,7 +97,7 @@ public interface OAuth2DataProvider {
         String[] scopes = null;
     }
 
-    final AtomicLong SEQNUM = new AtomicLong(1L);
+    final AtomicLong TOKSEQNUM = new AtomicLong(1L);
 
 	default String generateTokenId() {
 	    long timestamp = System.currentTimeMillis();
@@ -98,7 +108,7 @@ public interface OAuth2DataProvider {
 	    long nodeid = 1L; // TODO this should ideally be passed in based on which node this instance is running on
 	    // next move the nodeid to occupy the next 10 bits
 	    tmp_id |= nodeid << (63 - 41 - 10);
-	    long seqnum = SEQNUM.getAndIncrement();
+	    long seqnum = TOKSEQNUM.getAndIncrement();
 	    // lowest bits are taken by sequence number
 	    tmp_id |= seqnum;
 	    return Long.toString(tmp_id);

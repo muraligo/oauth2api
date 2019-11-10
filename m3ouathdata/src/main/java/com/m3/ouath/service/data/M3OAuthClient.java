@@ -1,4 +1,4 @@
-package com.m3.ouath.service.handler;
+package com.m3.ouath.service.data;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -121,6 +121,16 @@ public class M3OAuthClient implements Client {
     @Override
     public int compareTo(Client o) {
         return _id.compareTo(o.identifier());
+    }
+
+    public void setResourceDefs(String string) {
+		// TODO Auto-generated method stub
+		
+    }
+
+    public void setAdditionalInformation(String string) {
+		// TODO Auto-generated method stub
+		
     }
 
 }
