@@ -1,5 +1,7 @@
 package com.m3.ouath.service.data;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -12,8 +14,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.m3.common.core.M3SecurityUtil;
 import com.m3.oauth.common.AccessToken;
 import com.m3.oauth.common.Client;
+import com.m3.oauth.common.Client.Confidentiality;
+import com.m3.oauth.common.Client.UserAgent;
 import com.m3.oauth.common.Service;
 import com.m3.oauth.service.data.OAuth2DataProvider;
 
@@ -47,8 +52,8 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
 
     PreparedStatement psclientbyidsecret = null;
     PreparedStatement psclientins = null;
+    PreparedStatement psclientscopeupd = null;
     PreparedStatement pstokenins = null;
-    PreparedStatement psbyid = null;
 
     public M3OAuth2H2MemoryDataProvider(String name) {
         _name = name;
@@ -78,7 +83,7 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
                 String client_conf = rs.getString(5);
                 String user_agent = rs.getString(6);
                 cdt = new M3OAuthClient(thename, theid, thesecret, redirect_url, client_conf, user_agent);
-                cdt.setResourceDefs(rs.getString(7));
+                cdt.setScopesFromString(rs.getString(7));
                 cdt.setAdditionalInformation(rs.getString(8));
             }
         } catch (SQLException sqle1) {
@@ -90,19 +95,36 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
     @Override
     public Client registerClient(String thename, String redirecturl, String service, String[] initialscopes) {
         M3OAuthClient row = getClientByNameOnly(thename);
-        String resourcedefstr = null;
         if (row != null) {
-        	// TODO if exists, add the service and scopes to resourceDefs
-        	// TODO generate string resourceDefs and update
+            initializeClientUpdateScopesPs();
+            addServiceWithScopes(row, service, initialscopes);
+            int res = -1;
+            try {
+                psclientins.setString(1, row.scopesAsString());
+                res = psclientins.executeUpdate();
+                if (res > 0) {
+                    _LOG.info("SUCCESSfully added to client. Instances impacted {}.", res);
+                } else {
+                    final String errmsg = "ERROR adding to client. No rows added.";
+                    _LOG.error(errmsg);
+                    throw new RuntimeException(errmsg);
+                }
+            } catch (SQLException sqle1) {
+                throw new RuntimeException("ERROR executing SQL to insert client", sqle1);
+            }
             return row;
         }
         String theid = generateClientId();
-        String thesecret = null; // TODO generate the secret
-        String client_conf = null; // TODO pass in or use default
-        String user_agent = null; // TODO pass in or use default
+        String thesecret = null;
+        try {
+            thesecret = M3SecurityUtil.generateStrongKey(M3SecurityUtil.base64RandomUUID());
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            throw new IllegalStateException("AAA generating client secret", ex);
+        }
+        String client_conf = Confidentiality.TRUSTED.name(); // using default; TODO pass in, based on what?
+        String user_agent = UserAgent.SERVICE.name(); // using default; TODO pass in, based on what?
         row = new M3OAuthClient(thename, theid, thesecret, redirecturl, client_conf, user_agent);
-        // TODO generate string resourceDefs and set
-        row.setResourceDefs(resourcedefstr);
+        addServiceWithScopes(row, service, initialscopes);
         initializeClientInsertPs();
         int res = -1;
         try {
@@ -112,7 +134,7 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
             psclientins.setString(4, row.redirecturl());
             psclientins.setString(5, row.confidentiality().name());
             psclientins.setString(6, row.userAgentDetail());
-//            psclientins.setString(7, row.resourceDefs());
+            psclientins.setString(7, row.scopesAsString());
             res = psclientins.executeUpdate();
             if (res > 0) {
                 _LOG.info("SUCCESSfully added to client. Instances impacted {}.", res);
@@ -124,7 +146,7 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
         } catch (SQLException sqle1) {
             throw new RuntimeException("ERROR executing SQL to insert client", sqle1);
         }
-        return null;
+        return row;
     }
 
     @Override
@@ -356,6 +378,33 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
         return sqlsb.toString();
     }
 
+    private void initializeClientUpdateScopesPs() {
+        Connection conn = null;
+        try {
+            if (psclientscopeupd != null) {
+                psclientscopeupd.clearParameters();
+                psclientscopeupd.clearWarnings();
+            } else {
+                conn = connect();
+                if (conn == null) {
+                    throw new IllegalStateException("Exception connecting to access db");
+                }
+                psclientscopeupd = conn.prepareStatement(buildClientUpdateScopesString());
+            }
+        } catch (SQLException sqle1) {
+            throw new RuntimeException("ERROR preparing SQL to insert client", sqle1);
+        }
+    }
+
+    private String buildClientUpdateScopesString() {
+        StringBuilder sqlsb = new StringBuilder("UPDATE ");
+        sqlsb.append(CLIENT_TABLE_NAME);
+        sqlsb.append(" SET ");
+        sqlsb.append(FLD_RESOURCES);
+        sqlsb.append(" = ?");
+        return sqlsb.toString();
+    }
+
     private void initializeTokenInsertPs() {
         Connection conn = null;
         try {
@@ -407,5 +456,13 @@ public class M3OAuth2H2MemoryDataProvider implements OAuth2DataProvider {
         // the lowest bits are taken by sequence number
         _tmp_id |= _seqnum;
         return Long.toString(_tmp_id);
+    }
+
+    private void addServiceWithScopes(M3OAuthClient row, String service, String[] initialscopes) {
+        if (service != null && initialscopes != null && initialscopes.length > 0) {
+            for (int ix = 0; ix < initialscopes.length; ix++) {
+                row.addScope(service, initialscopes[ix]);
+            }
+        }
     }
 }

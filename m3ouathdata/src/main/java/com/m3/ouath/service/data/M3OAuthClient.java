@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import com.m3.common.core.M3CoreHelper;
 import com.m3.oauth.common.Client;
 
 public class M3OAuthClient implements Client {
@@ -118,19 +119,53 @@ public class M3OAuthClient implements Client {
         return scp;
     }
 
+    String scopesAsString() {
+        if (_scopes.isEmpty()) return null;
+        synchronized (_scopes) {
+            StringBuilder sb = new StringBuilder();
+            boolean firsttime1 = true;
+            for (Map.Entry<String, List<ClientScope>> me : _scopes.entrySet()) {
+                if (firsttime1) firsttime1 = false;
+                else sb.append(",");
+                sb.append(me.getKey());
+                sb.append(":");
+                boolean firsttime2 = true;
+                for (ClientScope cs : me.getValue()) {
+                    if (firsttime2) firsttime2 = false;
+                    else sb.append(" ");
+                    sb.append(cs.scope);
+                }
+            }
+            return sb.toString();
+        }
+    }
+
+    void setScopesFromString(String scopesstr) {
+        if (scopesstr != null && !scopesstr.isBlank()) {
+        	_scopes.values().forEach(lscp -> lscp.clear());
+        	_scopes.clear();
+            M3CoreHelper.convertDelimitedStringToMap(scopesstr, ",", ":", _scopes, this::parseCreateListScopes);
+        }
+    }
+
     @Override
     public int compareTo(Client o) {
         return _id.compareTo(o.identifier());
     }
 
-    public void setResourceDefs(String string) {
+    public void setAdditionalInformation(String string) {
 		// TODO Auto-generated method stub
 		
     }
 
-    public void setAdditionalInformation(String string) {
-		// TODO Auto-generated method stub
-		
+    private List<ClientScope> parseCreateListScopes(String service, String delimscopestr) {
+        List<ClientScope> cltscopes = new ArrayList<ClientScope>();
+        M3CoreHelper.convertDelimitedStringToList(delimscopestr, " ", service, cltscopes, this::parseCreateClientScope);
+        return cltscopes;
+    }
+
+    private ClientScope parseCreateClientScope(String service, String scope) {
+        return new ClientScope(service, scope);
     }
 
 }
