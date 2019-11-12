@@ -144,9 +144,9 @@ class OAuth2TokenHandler implements HttpHandler {
             return;
         }
         // First extract any credentials from the header and add to the formParams
-        if (exchange.getRequestHeaders().containsKey(OAuth2.AUTHORIZATION_HEADER)) {
+        if (hdrs.containsKey(OAuth2.AUTHORIZATION_HEADER)) {
             OAuth2.AuthorizationHeader authhdr = new OAuth2.AuthorizationHeader();
-            String authval = exchange.getRequestHeaders().getFirst(OAuth2.AUTHORIZATION_HEADER);
+            String authval = hdrs.getFirst(OAuth2.AUTHORIZATION_HEADER);
             authhdr.decode(authval);
             if (authhdr.isEmpty()) {
                 tokenresponse = TokenResponse.errorResponse(M3OAuthError.INVALID_REQUEST);

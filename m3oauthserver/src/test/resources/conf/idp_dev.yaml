@@ -1,0 +1,26 @@
+server:
+    listenport: 8800
+    metricsport: 9550
+security:
+    idp:
+        privatekeyfile: /inputs/private_key_pkcs8.pem
+        datasource:
+            name: testds
+            type: h2mem
+            initdata:
+              - name: clientdetails
+                values:
+                  - id: MACARAMA
+                    secret: BRAGADOVICH
+                    resources:
+                      - path: /sampleservice1/sampletarget1
+                        scope: rama lama ding dong
+                      - path: /sampleservice1/sampletarget2
+                        scope: mara nigd
+                      - path: /sampleservice2/hagardump
+                        scope: alma dong
+                  - id: ABRACADABRA
+                    secret: VICARIOUSLYOURS
+                    resources:
+                      - path: /sampleservice1/sampletarget2
+                        scope: mara dong
